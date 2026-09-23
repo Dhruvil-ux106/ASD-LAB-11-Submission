@@ -4,11 +4,18 @@ app.use(express.json());
 const pool = require('./db')
 
 app.get('/assignments',async(req,res)=>{
-   try {
-    result = await pool.query(`SELECT * FROM assignments ORDER BY id desc;`)
-    res.end(JSON.stringify(result.rows))
-  }catch (err) {
+  const submitted = req.query.submitted
+  const query = submitted === 'true'
+    ? 'SELECT * FROM assignments WHERE submitted = $1 ORDER BY id DESC'
+    : 'SELECT * FROM assignments ORDER BY id DESC'
+  const values = submitted === 'true' ? [true] : []
+
+  try {
+    const result = await pool.query(query, values)
+    res.json(result.rows)
+  } catch (err) {
     console.error('Error connecting to the database', err)
+    res.status(500).json({error: 'Could not retrieve assignments'})
   }
 })
 
